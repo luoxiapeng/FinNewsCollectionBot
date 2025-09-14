@@ -16,15 +16,18 @@ if not server_chan_keys_env:
     raise ValueError("环境变量 SERVER_CHAN_KEYS 未设置，请在Github Actions中设置此变量！")
 server_chan_keys = server_chan_keys_env.split(",")
 
-openai_client = OpenAI(api_key=openai_api_key, base_url="https://api.deepseek.com/v1")
-
+# openai_client = OpenAI(api_key=openai_api_key, base_url="https://api.deepseek.com/v1")
+openai_client = OpenAI(
+    api_key=os.getenv("DASHSCOPE_API_KEY"),
+    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+)
 # RSS源地址列表
 rss_feeds = {
     "💲 华尔街见闻":{
-        "华尔街见闻":"https://dedicated.wallstreetcn.com/rss.xml",      
+        "华尔街见闻":"https://dedicated.wallstreetcn.com/rss.xml",
     },
     "💻 36氪":{
-        "36氪":"https://36kr.com/feed",   
+        "36氪":"https://36kr.com/feed",
         },
     "🇨🇳 中国经济": {
         "香港經濟日報":"https://www.hket.com/rss/china",
@@ -126,7 +129,9 @@ def fetch_rss_articles(rss_feeds, max_articles=10):
 # AI 生成内容摘要（基于爬取的正文）
 def summarize(text):
     completion = openai_client.chat.completions.create(
-        model="deepseek-chat",
+#         model="deepseek-chat",
+        model="qwen-plus",
+
         messages=[
             {"role": "system", "content": """
              你是一名专业的财经新闻分析师，请根据以下新闻内容，按照以下步骤完成任务：
@@ -159,7 +164,7 @@ if __name__ == "__main__":
 
     # 每个网站获取最多 5 篇文章
     articles_data, analysis_text = fetch_rss_articles(rss_feeds, max_articles=5)
-    
+
     # AI生成摘要
     summary = summarize(analysis_text)
 
