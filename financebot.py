@@ -165,6 +165,24 @@ def send_to_wechat(title, content):
 
 
 if __name__ == "__main__":
+     # 获取当前北京时间小时
+        current_hour = datetime.now(pytz.timezone("Asia/Shanghai")).hour
+        time_period = ""
+        if current_hour == 6:
+            time_period = "晨报"
+        elif current_hour == 9:
+            time_period = "早报"
+        elif current_hour == 12:
+            time_period = "午报"
+        elif current_hour == 14:
+            time_period = "下午报"
+        elif current_hour == 16:
+            time_period = "傍晚报"
+        elif current_hour == 19:
+            time_period = "晚报"
+        elif current_hour == 21:
+            time_period = "夜间报"
+
     today_str = today_date().strftime("%Y-%m-%d")
 
     # 每个网站获取最多 5 篇文章
@@ -174,10 +192,10 @@ if __name__ == "__main__":
     summary = summarize(analysis_text)
 
     # 生成仅展示标题和链接的最终消息
-    final_summary = f"📅 **{today_str} 财经新闻摘要**\n\n✍️ **今日分析总结：**\n{summary}\n\n---\n\n"
+    final_summary = f"📅 **{today_str} 财经新闻摘要** ({time_period})\n\n✍️ **今日分析总结：**\n{summary}\n\n---\n\n"
     for category, content in articles_data.items():
         if content.strip():
             final_summary += f"## {category}\n{content}\n\n"
 
     # 推送到多个server酱key
-    send_to_wechat(title=f"📌 {today_str} 财经新闻摘要", content=final_summary)
+    send_to_wechat(title=f"📌 {today_str} 财经新闻摘要 ({time_period})", content=final_summary)
