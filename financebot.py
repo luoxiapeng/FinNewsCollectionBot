@@ -30,7 +30,7 @@ openai_client = OpenAI(
 rss_feeds = {
     "富途牛牛":{
       "富途牛牛":"https://app.folo.is/share/feeds/175391024433932288"
-    }
+    },
     "💲 华尔街见闻":{
         "华尔街见闻":"https://dedicated.wallstreetcn.com/rss.xml",
     },
