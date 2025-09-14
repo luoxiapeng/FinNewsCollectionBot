@@ -9,7 +9,7 @@ import pytz
 import os
 
 # OpenAI API Key
-openai_api_key = os.getenv("OPENAI_API_KEY")
+# openai_api_key = os.getenv("OPENAI_API_KEY")
 # 从环境变量获取 Server酱 SendKeys
 server_chan_keys_env = os.getenv("SERVER_CHAN_KEYS")
 if not server_chan_keys_env:
@@ -17,8 +17,13 @@ if not server_chan_keys_env:
 server_chan_keys = server_chan_keys_env.split(",")
 
 # openai_client = OpenAI(api_key=openai_api_key, base_url="https://api.deepseek.com/v1")
+# 获取DashScope API Key
+dashscope_api_key = os.getenv("DASHSCOPE_API_KEY")
+if not dashscope_api_key:
+    raise ValueError("环境变量 DASHSCOPE_API_KEY 未设置，请在Github Actions中设置此变量！")
+
 openai_client = OpenAI(
-    api_key=os.getenv("DASHSCOPE_API_KEY"),
+    api_key=dashscope_api_key,
     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
 )
 # RSS源地址列表
