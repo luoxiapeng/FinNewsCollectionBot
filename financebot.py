@@ -138,9 +138,6 @@ def fetch_rss_articles(rss_feeds, max_articles=10):
 # AI 生成内容摘要（基于爬取的正文）
 def summarize(text):
     completion = openai_client.chat.completions.create(
-        model="qwen-plus",
-    def summarize(text):
-    completion = openai_client.chat.completions.create(
         model="qwen-plus",  # 或其他你选择的模型
         messages=[
             {"role": "system", "content": """
@@ -159,7 +156,7 @@ def summarize(text):
                 - 展望：判断该热点是短期炒作还是有持续行情潜力。
                 - 核心个股/ETF：如果是板块概念，找出该板块的龙头股2-3只；如果是具体公司新闻，直接指出相关公司。列出对应的股票代码和名称。
                 - 技术分析：针对每只核心个股/ETF，分析当前技术走势，判断趋势方向（向上/向下/震荡）。
-                - 买点提示：对于趋势向上的个股，结合消息面和技术指标（如均线、支撑位、阻力位、成交量等）给出具体的买点建议和止损位。
+                - 买点提示：对于趋势向上的个股，结合技术指标（如均线、支撑位、阻力位、成交量等）给出具体的买点建议和止损位。
                 - 重要提醒：请注意你无法获取实时股价数据，请不要提供具体的价格预测或当前价格信息。
 
              4. 将以上分析整合为一篇1500字以内的财经热点摘要，逻辑清晰、重点突出，适合专业投资者阅读。
