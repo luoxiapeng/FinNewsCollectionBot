@@ -29,6 +29,12 @@ openai_client = OpenAI(
 
 # RSS源地址列表
 rss_feeds = {
+    "📈 富途牛牛": {
+        "富途牛牛市场资讯": {
+            "url": "https://news.futunn.com/news-site-api/main/get-market-list?size=15",
+            "type": "json"
+        }
+    },
     "💲 华尔街见闻":{
         "华尔街见闻":"https://dedicated.wallstreetcn.com/rss.xml",
     },
@@ -53,12 +59,6 @@ rss_feeds = {
 #         "ETF Trends": "https://www.etftrends.com/feed/",
           "华尔街日报":'https://feedx.net/rss/wsj.xml',
           "雅虎财经":'https://yahoo.buzzing.cc/feed.xml'
-    },
-    "📈 富途牛牛": {
-        "富途牛牛市场资讯": {
-            "url": "https://news.futunn.com/news-site-api/main/get-market-list?size=10",
-            "type": "json"
-        }
     },
 #     "🌍 世界经济": {
 #         "华尔街日报 - 经济":"https://feeds.content.dowjones.io/public/rss/socialeconomyfeed",
@@ -106,7 +106,7 @@ def fetch_feed_with_retry(url, retries=3, delay=5):
     return None
 
 # 获取富途牛牛JSON接口内容
-def fetch_json_articles(url, max_articles=10):
+def fetch_json_articles(url, max_articles=15):
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -123,6 +123,7 @@ def fetch_json_articles(url, max_articles=10):
 
         for item in news_list[:max_articles]:
             title = item.get('title', '无标题')
+            abstract = item.get('abstract', '')
             link = item.get('url', '')
 
             if not link:
@@ -130,9 +131,9 @@ def fetch_json_articles(url, max_articles=10):
 
             articles.append(f"- [{title}]({link})")
 
-            # 获取文章正文用于AI分析
-            article_text = fetch_article_text(link)
-            analysis_text += f"【{title}】\n{article_text}\n\n"
+            # 使用标题和摘要作为AI分析的主要内容
+            content_for_analysis = f"{title}\n{abstract}"
+            analysis_text += f"【{title}】\n{content_for_analysis}\n\n"
 
         return articles, analysis_text
 
@@ -193,10 +194,10 @@ def fetch_rss_articles(rss_feeds, max_articles=10):
     return news_data, analysis_text
 
 # AI 生成内容摘要（基于爬取的正文）
-# AI 生成内容摘要（基于爬取的正文）
 def summarize(text):
     # 获取当前北京时间
     current_date = datetime.now(pytz.timezone("Asia/Shanghai")).strftime("%Y-%m-%d")
+    current_weekday = datetime.now(pytz.timezone("Asia/Shanghai")).strftime("%A")
 
     completion = openai_client.chat.completions.create(
         model="qwen-plus",  # 或其他你选择的模型
@@ -204,7 +205,7 @@ def summarize(text):
             {"role": "system", "content": f"""
              你是一名专业的财经新闻分析师和技术分析专家，请根据以下新闻内容，按照以下步骤完成任务：
 
-             今天是{current_date}，请基于今日的市场情况来分析以下新闻内容，按照以下步骤完成任务：
+             今天是{current_date}，星期{current_weekday}。请基于今日的市场情况来分析以下新闻内容，按照以下步骤完成任务：
 
              1. 提取新闻中涉及的主要行业和主题，找出近1天涨幅最高的3个行业或主题，以及近3天涨幅较高且此前2周表现平淡的3个行业/主题。（如新闻未提供具体涨幅，请结合描述和市场情绪推测热点）
 
@@ -237,6 +238,7 @@ def summarize(text):
         ]
     )
     return completion.choices[0].message.content.strip()
+
 # 发送微信推送
 def send_to_wechat(title, content):
     for key in server_chan_keys:
@@ -252,7 +254,7 @@ def send_to_wechat(title, content):
 if __name__ == "__main__":
     today_str = today_date().strftime("%Y-%m-%d")
 
-    # 每个网站获取最多 5 篇文章
+    # 每个网站获取最多 5 篇文章（富途牛牛除外）
     articles_data, analysis_text = fetch_rss_articles(rss_feeds, max_articles=5)
 
     # AI生成摘要
