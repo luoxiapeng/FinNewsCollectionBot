@@ -35,6 +35,18 @@ rss_feeds = {
             "type": "json"
         }
     },
+    "📊 格隆汇": {
+        "格隆汇财经": {
+            "url": "https://www.gelonghui.com/api/live-channels/all/lives/v4?category=all&limit=15",
+            "type": "json2"
+        }
+    },
+    "💰 智通财经": {
+        "智通财经": {
+            "url": "https://mapi.zhitongcaijing.com/news/list.html?mode=history&access_token=&category_id=index_shouye&category_key=&language=zh-cn&last_time=&page=1&tradition_chinese=0",
+            "type": "json3"
+        }
+    },
     "💲 华尔街见闻":{
         "华尔街见闻":"https://dedicated.wallstreetcn.com/rss.xml",
     },
@@ -141,6 +153,84 @@ def fetch_json_articles(url, max_articles=15):
         print(f"❌ 富途牛牛接口获取失败: {e}")
         return [], ""
 
+# 获取格隆汇JSON接口内容
+def fetch_gelonghui_articles(url, max_articles=15):
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+
+        data = response.json()
+        articles = []
+        analysis_text = ""
+
+        # 解析JSON数据获取文章列表
+        news_list = data.get('result', [])
+
+        for item in news_list[:max_articles]:
+            title = item.get('title', '无标题')
+            content = item.get('content', '')
+            link = item.get('route', '')
+
+            if not link:
+                continue
+
+            articles.append(f"- [{title}]({link})")
+
+            # 使用标题和内容作为AI分析的主要内容
+            content_for_analysis = f"{title}\n{content}"
+            analysis_text += f"【{title}】\n{content_for_analysis}\n\n"
+
+        return articles, analysis_text
+
+    except Exception as e:
+        print(f"❌ 格隆汇接口获取失败: {e}")
+        return [], ""
+
+# 获取智通财经JSON接口内容
+def fetch_zhitongcaijing_articles(url, max_articles=10):
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+
+        data = response.json()
+        articles = []
+        analysis_text = ""
+
+        # 解析JSON数据获取文章列表
+        news_list = data.get('data', {}).get('list', [])
+
+        for item in news_list[:max_articles]:
+            title = item.get('title', '无标题')
+            digest = item.get('digest', '')
+            url_path = item.get('url', '')
+
+            # 构造完整链接
+            if url_path:
+                link = f"https://mapi.zhitongcaijing.com{url_path}"
+            else:
+                link = ""
+
+            if not link:
+                continue
+
+            articles.append(f"- [{title}]({link})")
+
+            # 使用标题和摘要作为AI分析的主要内容
+            content_for_analysis = f"{title}\n{digest}"
+            analysis_text += f"【{title}】\n{content_for_analysis}\n\n"
+
+        return articles, analysis_text
+
+    except Exception as e:
+        print(f"❌ 智通财经接口获取失败: {e}")
+        return [], ""
+
 # 获取RSS内容（爬取正文但不展示）
 def fetch_rss_articles(rss_feeds, max_articles=10):
     news_data = {}
@@ -151,9 +241,25 @@ def fetch_rss_articles(rss_feeds, max_articles=10):
         for source, source_info in sources.items():
             # 判断是RSS源还是JSON源
             if isinstance(source_info, dict) and source_info.get('type') == 'json':
-                # 处理JSON接口源
+                # 处理富途牛牛JSON接口源
                 print(f"📡 正在获取 {source} 的 JSON 接口: {source_info['url']}")
-                articles, analysis = fetch_json_articles(source_info['url'], max_articles)
+                articles, analysis = fetch_json_articles(source_info['url'], 15)  # 富途牛牛固定获取15条
+                analysis_text += analysis
+                articles_content = ""
+                if articles:
+                    articles_content = f"### {source}\n" + "\n".join(articles) + "\n\n"
+            elif isinstance(source_info, dict) and source_info.get('type') == 'json2':
+                # 处理格隆汇JSON接口源
+                print(f"📡 正在获取 {source} 的 JSON 接口: {source_info['url']}")
+                articles, analysis = fetch_gelonghui_articles(source_info['url'], 15)  # 格隆汇固定获取15条
+                analysis_text += analysis
+                articles_content = ""
+                if articles:
+                    articles_content = f"### {source}\n" + "\n".join(articles) + "\n\n"
+            elif isinstance(source_info, dict) and source_info.get('type') == 'json3':
+                # 处理智通财经JSON接口源
+                print(f"📡 正在获取 {source} 的 JSON 接口: {source_info['url']}")
+                articles, analysis = fetch_zhitongcaijing_articles(source_info['url'], 10)  # 智通财经固定获取10条
                 analysis_text += analysis
                 articles_content = ""
                 if articles:
@@ -162,6 +268,13 @@ def fetch_rss_articles(rss_feeds, max_articles=10):
                 # 处理原有的RSS源
                 url = source_info
                 print(f"📡 正在获取 {source} 的 RSS 源: {url}")
+
+                # 特殊处理华尔街见闻，获取10条新闻
+                if source == "华尔街见闻":
+                    feed_max_articles = 10
+                else:
+                    feed_max_articles = max_articles
+
                 feed = fetch_feed_with_retry(url)
                 if not feed:
                     print(f"⚠️ 无法获取 {source} 的 RSS 数据")
@@ -169,7 +282,7 @@ def fetch_rss_articles(rss_feeds, max_articles=10):
                 print(f"✅ {source} RSS 获取成功，共 {len(feed.entries)} 条新闻")
 
                 articles = []  # 每个source都需要重新初始化列表
-                for entry in feed.entries[:max_articles]:
+                for entry in feed.entries[:feed_max_articles]:
                     title = entry.get('title', '无标题')
                     link = entry.get('link', '') or entry.get('guid', '')
                     if not link:
@@ -254,7 +367,7 @@ def send_to_wechat(title, content):
 if __name__ == "__main__":
     today_str = today_date().strftime("%Y-%m-%d")
 
-    # 每个网站获取最多 5 篇文章（富途牛牛除外）
+    # 每个网站获取最多 5 篇文章（富途牛牛、格隆汇、智通财经和华尔街见闻除外）
     articles_data, analysis_text = fetch_rss_articles(rss_feeds, max_articles=5)
 
     # AI生成摘要
