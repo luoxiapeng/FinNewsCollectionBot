@@ -26,6 +26,7 @@ openai_client = OpenAI(
     api_key=dashscope_api_key,
     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
 )
+
 # RSS源地址列表
 rss_feeds = {
     "💲 华尔街见闻":{
@@ -45,16 +46,24 @@ rss_feeds = {
         "国家统计局-最新发布":"https://www.stats.gov.cn/sj/zxfb/rss.xml",
     },
       "🇺🇸 美国经济": {
-        "华尔街日报 - 经济":"https://feeds.content.dowjones.io/public/rss/WSJcomUSBusiness",
-        "华尔街日报 - 市场":"https://feeds.content.dowjones.io/public/rss/RSSMarketsMain",
-        "MarketWatch美股": "https://www.marketwatch.com/rss/topstories",
-        "ZeroHedge华尔街新闻": "https://feeds.feedburner.com/zerohedge/feed",
-        "ETF Trends": "https://www.etftrends.com/feed/",
+#         "华尔街日报 - 经济":"https://feeds.content.dowjones.io/public/rss/WSJcomUSBusiness",
+#         "华尔街日报 - 市场":"https://feeds.content.dowjones.io/public/rss/RSSMarketsMain",
+#         "MarketWatch美股": "https://www.marketwatch.com/rss/topstories",
+#         "ZeroHedge华尔街新闻": "https://feeds.feedburner.com/zerohedge/feed",
+#         "ETF Trends": "https://www.etftrends.com/feed/",
+          "华尔街日报":'https://feedx.net/rss/wsj.xml',
+          "雅虎财经":'https://yahoo.buzzing.cc/feed.xml'
     },
-    "🌍 世界经济": {
-        "华尔街日报 - 经济":"https://feeds.content.dowjones.io/public/rss/socialeconomyfeed",
-        "BBC全球经济": "http://feeds.bbci.co.uk/news/business/rss.xml",
+    "📈 富途牛牛": {
+        "富途牛牛市场资讯": {
+            "url": "https://news.futunn.com/news-site-api/main/get-market-list?size=10",
+            "type": "json"
+        }
     },
+#     "🌍 世界经济": {
+#         "华尔街日报 - 经济":"https://feeds.content.dowjones.io/public/rss/socialeconomyfeed",
+#         "BBC全球经济": "http://feeds.bbci.co.uk/news/business/rss.xml",
+#     },
 }
 
 # 获取北京时间
@@ -83,7 +92,6 @@ def fetch_feed_with_headers(url):
     }
     return feedparser.parse(url, request_headers=headers)
 
-
 # 自动重试获取 RSS
 def fetch_feed_with_retry(url, retries=3, delay=5):
     for i in range(retries):
@@ -97,6 +105,41 @@ def fetch_feed_with_retry(url, retries=3, delay=5):
     print(f"❌ 跳过 {url}, 尝试 {retries} 次后仍失败。")
     return None
 
+# 获取富途牛牛JSON接口内容
+def fetch_json_articles(url, max_articles=10):
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+
+        data = response.json()
+        articles = []
+        analysis_text = ""
+
+        # 解析JSON数据获取文章列表
+        news_list = data.get('data', {}).get('list', [])
+
+        for item in news_list[:max_articles]:
+            title = item.get('title', '无标题')
+            link = item.get('url', '')
+
+            if not link:
+                continue
+
+            articles.append(f"- [{title}]({link})")
+
+            # 获取文章正文用于AI分析
+            article_text = fetch_article_text(link)
+            analysis_text += f"【{title}】\n{article_text}\n\n"
+
+        return articles, analysis_text
+
+    except Exception as e:
+        print(f"❌ 富途牛牛接口获取失败: {e}")
+        return [], ""
+
 # 获取RSS内容（爬取正文但不展示）
 def fetch_rss_articles(rss_feeds, max_articles=10):
     news_data = {}
@@ -104,44 +147,64 @@ def fetch_rss_articles(rss_feeds, max_articles=10):
 
     for category, sources in rss_feeds.items():
         category_content = ""
-        for source, url in sources.items():
-            print(f"📡 正在获取 {source} 的 RSS 源: {url}")
-            feed = fetch_feed_with_retry(url)
-            if not feed:
-                print(f"⚠️ 无法获取 {source} 的 RSS 数据")
-                continue
-            print(f"✅ {source} RSS 获取成功，共 {len(feed.entries)} 条新闻")
-
-            articles = []  # 每个source都需要重新初始化列表
-            for entry in feed.entries[:5]:
-                title = entry.get('title', '无标题')
-                link = entry.get('link', '') or entry.get('guid', '')
-                if not link:
-                    print(f"⚠️ {source} 的新闻 '{title}' 没有链接，跳过")
+        for source, source_info in sources.items():
+            # 判断是RSS源还是JSON源
+            if isinstance(source_info, dict) and source_info.get('type') == 'json':
+                # 处理JSON接口源
+                print(f"📡 正在获取 {source} 的 JSON 接口: {source_info['url']}")
+                articles, analysis = fetch_json_articles(source_info['url'], max_articles)
+                analysis_text += analysis
+                articles_content = ""
+                if articles:
+                    articles_content = f"### {source}\n" + "\n".join(articles) + "\n\n"
+            else:
+                # 处理原有的RSS源
+                url = source_info
+                print(f"📡 正在获取 {source} 的 RSS 源: {url}")
+                feed = fetch_feed_with_retry(url)
+                if not feed:
+                    print(f"⚠️ 无法获取 {source} 的 RSS 数据")
                     continue
+                print(f"✅ {source} RSS 获取成功，共 {len(feed.entries)} 条新闻")
 
-                # 爬取正文用于分析（不展示）
-                article_text = fetch_article_text(link)
-                analysis_text += f"【{title}】\n{article_text}\n\n"
+                articles = []  # 每个source都需要重新初始化列表
+                for entry in feed.entries[:max_articles]:
+                    title = entry.get('title', '无标题')
+                    link = entry.get('link', '') or entry.get('guid', '')
+                    if not link:
+                        print(f"⚠️ {source} 的新闻 '{title}' 没有链接，跳过")
+                        continue
 
-                print(f"🔹 {source} - {title} 获取成功")
-                articles.append(f"- [{title}]({link})")
+                    # 爬取正文用于分析（不展示）
+                    article_text = fetch_article_text(link)
+                    analysis_text += f"【{title}】\n{article_text}\n\n"
 
-            if articles:
-                category_content += f"### {source}\n" + "\n".join(articles) + "\n\n"
+                    print(f"🔹 {source} - {title} 获取成功")
+                    articles.append(f"- [{title}]({link})")
+
+                articles_content = ""
+                if articles:
+                    articles_content = f"### {source}\n" + "\n".join(articles) + "\n\n"
+
+            category_content += articles_content
 
         news_data[category] = category_content
 
     return news_data, analysis_text
 
-
+# AI 生成内容摘要（基于爬取的正文）
 # AI 生成内容摘要（基于爬取的正文）
 def summarize(text):
+    # 获取当前北京时间
+    current_date = datetime.now(pytz.timezone("Asia/Shanghai")).strftime("%Y-%m-%d")
+
     completion = openai_client.chat.completions.create(
         model="qwen-plus",  # 或其他你选择的模型
         messages=[
-            {"role": "system", "content": """
+            {"role": "system", "content": f"""
              你是一名专业的财经新闻分析师和技术分析专家，请根据以下新闻内容，按照以下步骤完成任务：
+
+             今天是{current_date}，请基于今日的市场情况来分析以下新闻内容，按照以下步骤完成任务：
 
              1. 提取新闻中涉及的主要行业和主题，找出近1天涨幅最高的3个行业或主题，以及近3天涨幅较高且此前2周表现平淡的3个行业/主题。（如新闻未提供具体涨幅，请结合描述和市场情绪推测热点）
 
@@ -155,17 +218,17 @@ def summarize(text):
                 - 复盘：梳理过去3个月该行业/主题的核心逻辑、关键动态与阶段性走势。
                 - 展望：判断该热点是短期炒作还是有持续行情潜力。
                 - 核心个股/ETF：如果是板块概念，找出该板块的龙头股2-3只；如果是具体公司新闻，直接指出相关公司。列出对应的股票代码和名称。
-                - 技术分析：针对每只核心个股/ETF，分析当前技术走势，判断趋势方向（向上/向下/震荡）。
+                - 技术分析：针对每只核心个股/ETF，基于{current_date}当天的股价数据进行技术走势分析，判断趋势方向（向上/向下/震荡）。
                 - 买点提示：对于趋势向上的个股，结合技术指标（如均线、支撑位、阻力位、成交量等）给出具体的买点建议和止损位。
                 - 重要提醒：请注意你无法获取实时股价数据，请不要提供具体的价格预测或当前价格信息。
 
              4. 将以上分析整合为一篇1500字以内的财经热点摘要，逻辑清晰、重点突出，适合专业投资者阅读。
              5. 最后给出一个"今日重点关注"小结，列出3-5个最值得关注的个股及其简要理由和操作建议。
-             6. 重要：所有价格相关分析应基于技术面而非具体数值，不要编造不存在的价格数据。
+             6. 重要：所有价格相关分析应基于{current_date}当天的技术面而非具体数值，不要编造不存在的价格数据。
 
              注意事项：
              - 个股推荐需基于新闻内容和合理推断，不要随意编造不存在的关联
-             - 技术分析要结合趋势、支撑阻力位、成交量等要素
+             - 技术分析要结合趋势、支撑阻力位、成交量等要素，并基于{current_date}当天的股价数据
              - 买点提示要具体，包括价格区间和风险控制建议
              - 所有分析建议仅供参考，不构成投资建议
              - 不要提供任何具体的实时股价数据
@@ -174,7 +237,6 @@ def summarize(text):
         ]
     )
     return completion.choices[0].message.content.strip()
-
 # 发送微信推送
 def send_to_wechat(title, content):
     for key in server_chan_keys:
