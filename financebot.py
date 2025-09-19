@@ -7,8 +7,6 @@ from datetime import datetime
 import time
 import pytz
 import os
-# 添加繁体转简体的库
-from zhconv import convert
 # OpenAI API Key
 # openai_api_key = os.getenv("OPENAI_API_KEY")
 # 从环境变量获取 Server酱 SendKeys
@@ -154,16 +152,10 @@ def fetch_json_articles(url, max_articles=20):
             if not link:
                 continue
 
-            # 繁体转简体
-            title = convert(title, 'zh-hans')
-            abstract = convert(abstract, 'zh-hans')
-
             articles.append(f"- [{title}]({link})")
 
             # 使用标题和摘要作为AI分析的主要内容
             content_for_analysis = f"{title}\n{abstract}"
-            # 繁体转简体
-            content_for_analysis = convert(content_for_analysis, 'zh-hans')
             analysis_text += f"【{title}】\n{content_for_analysis}\n\n"
 
         return articles, analysis_text
@@ -290,10 +282,6 @@ def fetch_jinse_articles(url, max_articles=20):
 
             # 提取标题（使用内容的前30个字符作为标题）
             title = content[:30] + "..." if len(content) > 30 else content
-
-            # 繁体转简体
-            title = convert(title, 'zh-hans')
-            content = convert(content, 'zh-hans')
 
             articles.append(f"- [{title}]({link})")
 
