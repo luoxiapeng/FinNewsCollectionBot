@@ -8,8 +8,7 @@ import time
 import pytz
 import os
 # 添加繁体转简体的库
-from zhconv
-import convert
+from zhconv import convert
 # OpenAI API Key
 # openai_api_key = os.getenv("OPENAI_API_KEY")
 # 从环境变量获取 Server酱 SendKeys
