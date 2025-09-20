@@ -61,15 +61,11 @@ rss_feeds = {
     "💻 36氪":{
         "36氪":"https://36kr.com/feed",
     },
-    "财联社":{
-          "财联社头条":' https://rsshub.app/cls/telegraph/red',
-          "财联社热门":' https://rsshub.app/cls/hot'
-    },
      "🇺🇸 美国经济": {
             "华尔街日报 - 经济":"https://cn.wsj.com/zh-hans/rss",
             "联合早报":"https://plink.anyfeeder.com/zaobao/realtime/world",
             "纽约时报":"https://plink.anyfeeder.com/nytimes/dual",
-            "华尔街日报 - 市场":"https://feeds.content.dowjones.io/public/rss/RSSMarketsMain",
+#             "华尔街日报 - 市场":"https://feeds.content.dowjones.io/public/rss/RSSMarketsMain",
             "雅虎财经":'https://yahoo.buzzing.cc/feed.xml',
 #             "MarketWatch美股": "https://www.marketwatch.com/rss/topstories",
 #             "ZeroHedge华尔街新闻": "https://feeds.feedburner.com/zerohedge/feed",
