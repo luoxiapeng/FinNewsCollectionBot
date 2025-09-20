@@ -71,17 +71,16 @@ rss_feeds = {
             "纽约时报":"https://plink.anyfeeder.com/nytimes/dual",
             "华尔街日报 - 市场":"https://feeds.content.dowjones.io/public/rss/RSSMarketsMain",
             "雅虎财经":'https://yahoo.buzzing.cc/feed.xml',
-            "MarketWatch美股": "https://www.marketwatch.com/rss/topstories",
-            "ZeroHedge华尔街新闻": "https://feeds.feedburner.com/zerohedge/feed",
-            "ETF Trends": "https://www.etftrends.com/feed/"
+#             "MarketWatch美股": "https://www.marketwatch.com/rss/topstories",
+#             "ZeroHedge华尔街新闻": "https://feeds.feedburner.com/zerohedge/feed",
+#             "ETF Trends": "https://www.etftrends.com/feed/"
     },
     "🇨🇳 中国经济": {
         "香港經濟日報":"https://www.hket.com/rss/china",
         "东方财富":"http://rss.eastmoney.com/rss_partener.xml",
         "百度股票焦点":"http://news.baidu.com/n?cmd=1&class=stock&tn=rss&sub=0",
         "中新网":"https://www.chinanews.com.cn/rss/finance.xml",
-        "同花顺":"https://rsshub.app/10jqka/realtimenews",
-        "选股宝":"https://pyrsshub.vercel.app/xuangubao/theme/17006066",
+        "同花顺":"https://rsshub.app/10jqka/realtimenews"
     },
 
 #     "🌍 世界经济": {
