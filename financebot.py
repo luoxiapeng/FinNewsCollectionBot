@@ -69,7 +69,7 @@ rss_feeds = {
             "华尔街日报 - 经济":"https://cn.wsj.com/zh-hans/rss",
             "联合早报":"https://plink.anyfeeder.com/zaobao/realtime/world",
             "纽约时报":"https://plink.anyfeeder.com/nytimes/dual",
-            "华尔街日报 - 市场":"https://feeds.content.dowjones.io/public/rss/RSSMarketsMain",
+#             "华尔街日报 - 市场":"https://feeds.content.dowjones.io/public/rss/RSSMarketsMain",
             "雅虎财经":'https://yahoo.buzzing.cc/feed.xml',
 #             "MarketWatch美股": "https://www.marketwatch.com/rss/topstories",
 #             "ZeroHedge华尔街新闻": "https://feeds.feedburner.com/zerohedge/feed",
@@ -77,9 +77,9 @@ rss_feeds = {
     },
     "🇨🇳 中国经济": {
         "香港經濟日報":"https://www.hket.com/rss/china",
-        "东方财富":"http://rss.eastmoney.com/rss_partener.xml",
+#         "东方财富":"http://rss.eastmoney.com/rss_partener.xml",
         "百度股票焦点":"http://news.baidu.com/n?cmd=1&class=stock&tn=rss&sub=0",
-        "中新网":"https://www.chinanews.com.cn/rss/finance.xml",
+#         "中新网":"https://www.chinanews.com.cn/rss/finance.xml",
         "同花顺":"https://rsshub.app/10jqka/realtimenews"
     },
 
@@ -491,7 +491,7 @@ if __name__ == "__main__":
     today_str = today_date().strftime("%Y-%m-%d")
 
     # 每个网站获取最多 5 篇文章（富途牛牛、格隆汇、智通财经和华尔街见闻除外）
-    articles_data, analysis_text = fetch_rss_articles(rss_feeds, max_articles=10)
+    articles_data, analysis_text = fetch_rss_articles(rss_feeds, max_articles=7)
 
     # AI生成摘要
     summary = summarize(analysis_text)
